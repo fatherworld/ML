@@ -1,16 +1,15 @@
 #include<stdio.h>
 #include<opencv2/opencv.hpp>
-//#include<cv.h>
 #include<opencv2/highgui/highgui.hpp>
 #include<vector>
 #include<unistd.h>
 using namespace std;
 using namespace cv;
 static pthread_t tid;
-int maxImageNums = 0;
-pthread_mutex_t image_mutex;
-pthread_cond_t count_image;
-vector<Mat> Images;
+static int maxImageNums;
+static pthread_mutex_t image_mutex;
+static pthread_cond_t count_image;
+static vector<Mat> Images;
 
 int GetFrames(vector<int> sections,vector<vector<Mat> > &frames,int frameNums)
 {
@@ -90,14 +89,14 @@ void* runCamera1(void* args)
     while(1)
     {
 	Mat frame;
-	waitKey(10);
+//	waitKey(10);
 	cap >> frame;
         
 	pthread_mutex_lock(&image_mutex);
 	if(Images.size() > maxImageNums)
 	    pthread_cond_signal(&count_image);
         Images.push_back(frame);
-	imshow("video",frame);
+//	imshow("video",frame);
 	pthread_mutex_unlock(&image_mutex);
     } 
     return (void*)0;
@@ -114,8 +113,24 @@ int openCamera(int maxImages)
 
 void init()
 {
+   tid = 0;
+   maxImageNums = 0;
    pthread_mutex_init(&image_mutex,NULL); 
    pthread_cond_init(&count_image,NULL);
+}
+
+void test(vector<vector<Mat> > frames)
+{
+    cvNamedWindow("images",CV_WINDOW_AUTOSIZE);
+    for(int i=0;i<frames.size();i++)
+    {
+	cout<<"i is "<<i<<endl;
+	for(int j=0;j<frames[i].size();j++)
+	{
+	    waitKey(2);
+	    imshow("images",frames[i][j]);
+	}
+    }
 }
 
 
@@ -132,6 +147,7 @@ int main(int argc,char** argv)
     int frameNums = 10;
     err = GetFrames(sections,frames,frameNums);
     //while(1);
+    test(frames);
     pthread_join(tid, NULL);
 
     return 0;
