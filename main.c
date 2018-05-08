@@ -21,21 +21,14 @@ int GetFrames(vector<int> sections,vector<vector<Mat> > &frames,int frameNums)
     }
     int start_num = 0;
     int end_num = sections.size();
-    cout<<"end_num"<<end_num<<endl;
-    cout<<"image.size is "<<Images.size()<<endl;
     for (vector<int>::iterator it = sections.begin();it != sections.end();it++)
     {
-	cout<<"section's it is"<<*it<<endl;
-	
 	int temps = *it;
 	int countSize = Images.size();
 	vector<Mat> temp;
 	for(int i=0;i<frameNums;i++)
 	    {
-		cout<<"i is"<<i<<endl;
 		temp.push_back(Images[(temps)*i]);
-		//frames[start_num][i] = Images[(temp)*i];
-		cout<<"image is"<<endl;
 	    }
 	frames.push_back(temp);	
 	temp.clear();
@@ -88,8 +81,7 @@ int waitSubThread()
 	if(*(int*)nRes >= 0)
 	{
 	     break;
-	}
-	   
+	}   
     }
     return 0;
 }
