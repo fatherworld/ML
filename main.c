@@ -14,10 +14,6 @@ static vector<Mat> Images;
 int GetFrames(vector<int> sections,vector<vector<Mat> > &frames,int frameNums)
 {
     int ret = 0;
-
-   // if(Images.size() < maxImageNums)
-//	sleep(1);
-
     pthread_mutex_lock(&image_mutex);	
     while(Images.size()<maxImageNums)
     {
@@ -48,65 +44,29 @@ int GetFrames(vector<int> sections,vector<vector<Mat> > &frames,int frameNums)
     pthread_mutex_unlock(&image_mutex);
     return ret;
 }
-
-void* runCamera(void* args)
-{ 
-  //  int maxImages = *((int*)args);
-    VideoCapture cap(0);
-    if(!cap.isOpened())
-	return (void*)-1;
-    cap.set(CV_CAP_PROP_FRAME_WIDTH,640);
-    cap.set(CV_CAP_PROP_FRAME_HEIGHT,480);
-//    cap.set(CV_CAP_PROP_FPS,15);
-//    cvNamedWindow("video",CV_WINDOW_AUTOSIZE);
-    while(1)
-    {
-	Mat frame;
-	waitKey(10);
-	cap >> frame;
-        
-	pthread_mutex_lock(&image_mutex);
-
-        Images.push_back(frame);
-	imshow("video",frame);
-
-        pthread_mutex_unlock(&image_mutex);
-
-    } 
-    return (void*)0;
-}
-
 void* runCamera1(void* args)
 { 
-  //  int maxImages = *((int*)args);
     VideoCapture cap(0);
     if(!cap.isOpened())
 	return (void*)-1;
     cap.set(CV_CAP_PROP_FRAME_WIDTH,640);
     cap.set(CV_CAP_PROP_FRAME_HEIGHT,480);
-//    cap.set(CV_CAP_PROP_FPS,15);
-//    cvNamedWindow("video",CV_WINDOW_AUTOSIZE);
     while(1)
     {
 	Mat frame;
-//	waitKey(10);
-	cap >> frame;
-        
+	cap >> frame;  
 	pthread_mutex_lock(&image_mutex);
 	if(Images.size() > maxImageNums)
 	    pthread_cond_signal(&count_image);
         Images.push_back(frame);
-//	imshow("video",frame);
 	pthread_mutex_unlock(&image_mutex);
     } 
     return (void*)0;
 }
 
-
 int openCamera(int maxImages)
 {
     maxImageNums = maxImages;
-    //int err = pthread_create(&tid,NULL,runCamera,(&maxImages));
     int err = pthread_create(&tid,NULL,runCamera1,NULL);
     return err;
 }
@@ -119,20 +79,20 @@ void init()
    pthread_cond_init(&count_image,NULL);
 }
 
-void test(vector<vector<Mat> > frames)
+int waitSubThread()
 {
-    cvNamedWindow("images",CV_WINDOW_AUTOSIZE);
-    for(int i=0;i<frames.size();i++)
+    void* nRes;
+    while(1)
     {
-	cout<<"i is "<<i<<endl;
-	for(int j=0;j<frames[i].size();j++)
+	pthread_join(tid, &nRes);
+	if(*(int*)nRes >= 0)
 	{
-	    waitKey(2);
-	    imshow("images",frames[i][j]);
+	     break;
 	}
+	   
     }
+    return 0;
 }
-
 
 int main(int argc,char** argv)
 {
@@ -146,41 +106,8 @@ int main(int argc,char** argv)
     vector<vector<Mat> >frames; 
     int frameNums = 10;
     err = GetFrames(sections,frames,frameNums);
-    //while(1);
-    test(frames);
-    pthread_join(tid, NULL);
-
+    waitSubThread();   
     return 0;
 }
 
 
-int main1(int argc,char**argv)
-{
-    VideoCapture cap(0);
-    if(!cap.isOpened())
-	return -1;
-    cap.set(CV_CAP_PROP_FRAME_WIDTH,640);
-    cap.set(CV_CAP_PROP_FRAME_HEIGHT,480);
-    cap.set(CV_CAP_PROP_FPS,15);
-    Mat src_gray;
-    cvNamedWindow("video",CV_WINDOW_AUTOSIZE);
-    while(1)
-    {
-	Mat frame;
-	waitKey(10);
-        cap>>frame;
-	Images.push_back(frame);
-	cout<<"the size of Images is "<<Images.size()<<endl;
-	
-	imshow("video",Images[Images.size()-1]);
-    }
-/*
-    Mat image;
-    char* src = "/home/ys/Desktop/1.jpg";
-    image = imread(src,0);
-    namedWindow("DisplayImage",CV_WINDOW_AUTOSIZE);
-    imshow("DisplayImage",image);
-    waitKey(10000);
-    return 0;
-*/
-}
